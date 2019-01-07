@@ -10,9 +10,9 @@ void setup() {
 void loop() {
   for(int x = 0; x < 200; x++) {
     digitalWrite(Pas, HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(1);
     digitalWrite(Pas, LOW);
-    delay(4);
+    delay(1);
     }
-  delay(1000);
+  delay(0);
 }
