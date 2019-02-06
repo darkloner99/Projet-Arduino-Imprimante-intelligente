@@ -1,5 +1,12 @@
-#include <SPI.h>
 #include <RFID.h>
+
+#include <SPI.h>
+
+/*#include <deprecated.h>
+#include <MFRC522.h>
+#include <MFRC522Extended.h>
+#include <require_cpp11.h>*/
+
 RFID monModuleRFID(10,9);
 int UID[5];
 
@@ -20,6 +27,7 @@ void loop() {
               Serial.print(".");
             }
             Serial.println("");
+            delay(2000);
           }          
           monModuleRFID.halt();
     }
