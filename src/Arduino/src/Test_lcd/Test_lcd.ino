@@ -7,7 +7,7 @@ void setup() {
   lcd.clear();
   lcd.print("Coucou Apolline");
   lcd.setCursor(0,1);
-  lcd.print("Tu es moche :)");
+  lcd.print("Tu es moche :)<");
 }
 
 void loop() {
