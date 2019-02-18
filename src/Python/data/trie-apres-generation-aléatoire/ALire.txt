@@ -1,0 +1,1 @@
+On retrouve ici environ 78000 lettres et chiffres générés par le module @random_images_creator.py a partir des 2900 triées

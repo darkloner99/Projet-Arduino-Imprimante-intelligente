@@ -1,0 +1,1 @@
+On retrouve aussi environ 2900 lettres et chiffres trié à la main afin de nourrir le réseau de neurones de données
