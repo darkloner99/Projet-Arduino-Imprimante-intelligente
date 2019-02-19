@@ -27,9 +27,9 @@ print('Model successfully loaded')
 from Images_utils import loadImage, countColumns, calculateAverage, calculatePixelDensity, browseDensity, cut
 
 #-------------------------------------------------------#
-
 characters = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','autres']
 
+# Ce chemin est périmé, et n'existe pas dans le git, vous devez pointer vers le dossier contenand les images dont vous voulez extraire les charactères
 PATH=r'C:\Users\antoi\Documents\GitHub\Projet-Arduino-Imprimante-intelligente\src\neuronal-network-handwritting\src\page-5-extraction\\'
 
 #-------------------------------------------------------#

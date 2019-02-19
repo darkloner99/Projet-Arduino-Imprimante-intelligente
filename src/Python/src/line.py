@@ -1,6 +1,7 @@
 '''
 Created on 1 janv. 2019
 
+La classe Ligne construit une image de ligne a partir de l'ensemble des mots générés dans celle-ci
 '''
 
 from word import Word

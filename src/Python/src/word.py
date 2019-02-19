@@ -2,6 +2,8 @@
 Created on 1 janv. 2019
 
 @author:@antoi
+
+La classe word génére des mots a partir des images situé dans combinaisons et trie
 '''
 from data import *
 import os

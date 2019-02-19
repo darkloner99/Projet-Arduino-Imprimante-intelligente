@@ -3,14 +3,22 @@
 LiquidCrystal lcd(14,15,16,17,18,19);
 
 void setup() {
-  lcd.begin(16,2);
   lcd.clear();
-  lcd.print("Coucou Apolline");
-  lcd.setCursor(0,1);
-  lcd.print("Tu es moche :)<");
+  lcd.begin(16,2);
+
+ 
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  lcd.setCursor(0,0);
+  lcd.clear();
+  lcd.print("En cours");
+  lcd.setCursor(0,1);
+  lcd.print("d'impression");
+  delay(2000);
+  lcd.clear();
+ 
+  
 
 }

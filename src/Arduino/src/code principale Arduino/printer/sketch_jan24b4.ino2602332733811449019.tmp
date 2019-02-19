@@ -1,0 +1,594 @@
+#include <Stepper_custom.h>
+#include <RFID.h>
+#include <SPI.h>
+#include <LiquidCrystal.h>
+
+
+// Motor 1 and 2 pin
+const int Pas_1_2 = 3;
+const int Dir_1 = 4;
+const int Dir_2 = 5;
+
+// Motor 3 pin
+const int Pas_3 = 6;
+const int Dir_3 = 7;
+
+// Motor 4 pin
+const int Pas_4 = 8;
+const int Dir_4 = 9;
+
+// Enable
+const int ENABLE = 2;
+
+// Initialise Stepper Motor
+Stepper_custom StepperX(Dir_1, Pas_1_2);
+Stepper_custom StepperX_2(Dir_2, Pas_1_2);
+Stepper_custom StepperY(Dir_3, Pas_3);
+Stepper_custom StepperZ(Dir_4, Pas_4);
+
+// Motor info and variable
+int MicroStep = 8;
+float AnglePerStep = 1.8;
+float Circumference = 31.4;
+float NbStepPerRotation = 360 / AnglePerStep;
+float StepsPerMillimeter = (NbStepPerRotation / Circumference) * MicroStep;
+float StepInc = -1;
+int StepDelay = 0;
+int LineDelay = 0;
+int penDelay = 50;
+
+// position
+
+float Xpos = 0;
+float Ypos = 0;
+int Zpos = 1;
+float Xmax = 200;
+float Ymax = 300;
+float Xmin = 0;
+float Ymin = 0;
+
+double newPosX;
+double newPosY;
+double newPosZ;
+
+// RFID
+
+RFID monModuleRFID(10,9);
+int locker = 0;
+int UID[5];
+int MASTERKEY[5]={2,121,37,217,135};
+
+// LCD
+
+LiquidCrystal lcd(14,15,16,17,18,19);
+
+// global variables
+
+int speedMotor;
+
+int WORD_INDEX = 0;
+int CHARAC_INDEX = 0;
+int LINE_INDEX;
+int LINE_COMMAND_LENGH;
+
+#define TAB1LENGHT 10
+#define TAB1LARGER 10
+
+char subChain[TAB1LENGHT][TAB1LARGER];
+boolean verbose = false;
+
+void setup()
+{
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+
+  pinMode(ENABLE, OUTPUT);
+  pinMode(Pas_1_2, OUTPUT);
+  pinMode(Pas_3, OUTPUT);
+  pinMode(Pas_4, OUTPUT);
+
+  pinMode(Dir_1, OUTPUT);
+  pinMode(Dir_2, OUTPUT);
+  pinMode(Dir_3, OUTPUT);
+  pinMode(Dir_4, OUTPUT);
+
+  StepperX_2.setspeed(1);
+  StepperX.setspeed(1);
+  StepperY.setspeed(1);
+  StepperZ.setspeed(1);
+
+
+  SPI.begin();
+  monModuleRFID.init();  
+
+  lcd.clear();
+  lcd.begin(16,2);
+
+}
+
+void loop()
+/*
+ * Main Loop Here !!!
+*/
+{
+  if (readRFID())
+  {
+    locker = changeLockerState(locker);
+    Serial.print("Locker changed state :");
+    Serial.println(locker);
+    delay(1200);
+  }
+  if (locker == 1)
+  {
+    if (Serial.available())
+    {
+      char *commandLine = getCommandLine();
+      execCommandLine(commandLine);
+      // We return a validation message
+      Serial.println("OK");
+    }
+    else
+    {
+      delay(80);
+    }
+    delay(20);
+  }
+  else
+  {
+    char msg[16] = "Identification   ";
+    printLCD(&msg[0] , 0, 0 , true);
+    char msg[16] = "requise        ";
+    printLCD(&msg[0], 1, 1000, false);
+  }
+  delay(20);
+}
+
+//   ###################
+//   # Utils functions #
+//   ###################
+
+void deleteSubchain()
+{
+
+  char reset[10] = "          ";
+  int i = 0;
+  while (i < TAB1LENGHT)
+  {
+
+    strcpy(subChain[i], reset);
+    i += 1;
+  }
+}
+
+double extractDouble(char *ptr, int START, int END)
+{
+
+  char number[15];
+  int i = START;
+  while (i < END)
+  {
+
+    number[i - START] = *(ptr + i);
+    i += 1;
+  }
+  double n = atof(number);
+  return n;
+}
+
+char *getArrayElement(char *ptr, int index)
+{
+
+  return &(*(ptr + index * TAB1LARGER));
+}
+
+void newPrintSerial(char *ptr)
+{
+
+  int i = 0;
+  while (i < TAB1LARGER)
+  {
+
+    Serial.print(*(ptr + i));
+    i += 1;
+    if (*(ptr + i) == '\0')
+    {
+      break;
+    }
+  }
+  Serial.println("");
+}
+
+char getNextCharac(char *ptr)
+{
+
+  CHARAC_INDEX += 1;
+  return *(ptr + CHARAC_INDEX - 1);
+}
+
+char *getNextWord(char *ptr)
+{
+
+  char *ptr_2 = getArrayElement(ptr, WORD_INDEX);
+  WORD_INDEX += 1;
+  CHARAC_INDEX = 0;
+  return ptr_2;
+}
+
+boolean checkIfNumber(char c)
+{
+
+  switch (c)
+  {
+  case '0':
+    return true;
+  case '1':
+    return true;
+  case '2':
+    return true;
+  case '3':
+    return true;
+  case '4':
+    return true;
+  case '5':
+    return true;
+  case '6':
+    return true;
+  case '7':
+    return true;
+  case '8':
+    return true;
+  case '9':
+    return true;
+  default:
+    return false;
+  }
+}
+
+char *splitLineInstruction(char str[])
+{
+
+  int i = 0;
+  int n = 0;
+  char tmpSubChain[100];
+  int tmpSubChain_index = 0;
+
+  while (i < strlen(str))
+  {
+    char c = str[i];
+    if ('A' != c)
+    {
+      tmpSubChain[tmpSubChain_index] = c;
+      tmpSubChain_index += 1;
+    }
+    else
+    {
+
+      tmpSubChain[tmpSubChain_index] = '\0';
+      tmpSubChain_index = 0;
+      strcpy(subChain[n], tmpSubChain);
+      memset(tmpSubChain, 0, sizeof(tmpSubChain));
+      n += 1;
+    }
+    i += 1;
+  }
+  LINE_COMMAND_LENGH = n + 1;
+  char *ptr = &subChain[0][0];
+  return ptr;
+}
+
+//  ##################################
+//  # Serial and Bluetooth functions #
+//  ##################################
+
+char *getCommandLine()
+{
+
+  char str[100];
+  char c;
+  int index = 0;
+  WORD_INDEX = 0;
+
+  c = Serial.read();
+  str[index] = c;
+  index += 1;
+
+  while (Serial.available())
+  {
+    c = Serial.read();
+    str[index] = c;
+    index += 1;
+  }
+  str[index] = '\0';
+  char *ptr = splitLineInstruction(str);
+  return ptr;
+}
+
+void execCommandLine(char *commandLine)
+{
+
+  int WORD_INDEX = 0;
+  int CHARAC_INDEX = 0;
+  char BUFFER_1;
+  char BUFFER_2;
+  char *word_c = getNextWord(commandLine);
+
+  delay(100);
+  BUFFER_1 = getNextCharac(word_c);
+  BUFFER_2 = getNextCharac(word_c);
+  switch (BUFFER_1)
+  {
+
+  case 'G':
+
+    if (BUFFER_2 == '0' or BUFFER_2 == '1' or BUFFER_2 == '2' or BUFFER_2 == '3' and checkIfNumber(BUFFER_2))
+    {
+      int i = 0;
+      while (i < TAB1LARGER)
+      {
+
+        word_c = getNextWord(commandLine);
+        BUFFER_1 = getNextCharac(word_c);
+        BUFFER_2 = getNextCharac(word_c);
+        if (BUFFER_1 == 'X')
+        {
+          Serial.println("OKAY_X");
+          newPosX = extractDouble(word_c, 1, 13);
+        }
+        else if (BUFFER_1 == 'Y')
+        {
+          Serial.println("OKAY_Y");
+          newPosY = extractDouble(word_c, 1, 13);
+        }
+        else if (BUFFER_1 == 'Z')
+        {
+          Serial.println("OKAY_Z");
+          if (BUFFER_2 == '5')
+          {
+            moveZ();
+          }
+        }
+        i += 1;
+      }
+      drawLine(newPosX, newPosY);
+      break;
+    }
+
+  case 'E':
+   // Enable or not the drivers
+    if (BUFFER_2 == '0')
+    {
+      digitalWrite(ENABLE, HIGH);
+    }
+    if (BUFFER_2 == '1')
+    {
+      digitalWrite(ENABLE, LOW);
+    }
+    break;
+
+  case 'P':
+
+   // We have already BUFFER_1 and BUFFER_2 so we get only
+   // BUFFER_3
+    BUFFER_3 = getNextCharac(word_c);
+    // The next word is the word to print
+    word_c = getNextWord(word_c);
+
+    // Call printLCD to print it 
+    printLCD(word_c ,BUFFER_1, BUFFER_2, BUFFER_3);
+
+
+
+
+
+  default:
+
+    Serial.println(word_c);
+    int i = 0;
+    while (i < LINE_COMMAND_LENGH)
+    {
+
+      word_c = getNextWord(commandLine);
+      Serial.println(word_c);
+      i += 1;
+    }
+    break;
+  }
+
+  deleteSubchain();
+}
+
+//   #########################
+//   # Motor basic functions #
+//   #########################
+
+/*********************************
+ * Draw a line from (x0;y0) to (x1;y1).
+ * int (x1;y1) : Starting coordinates
+ * int (x2;y2) : Ending coordinates
+ **********************************/
+void drawLine(float x1, float y1)
+{
+
+  //  Bring instructions within limits
+  if (x1 >= Xmax)
+  {
+    x1 = Xmax;
+  }
+  if (x1 <= Xmin)
+  {
+    x1 = Xmin;
+  }
+  if (y1 >= Ymax)
+  {
+    y1 = Ymax;
+  }
+  if (y1 <= Ymin)
+  {
+    y1 = Ymin;
+  }
+
+  //  Convert coordinates to steps
+  x1 = (x1 * StepsPerMillimeter);
+  //Serial.println(x1);
+  y1 = (y1 * StepsPerMillimeter);
+  //Serial.println(y1);
+  float x0 = (Xpos * StepsPerMillimeter);
+  float y0 = (Ypos * StepsPerMillimeter);
+  delay(10);
+
+  //  Let's find out the change for the coordinates
+  long dx = abs((x1 - x0));
+  long dy = abs(y1 - y0);
+  int sx = x0 < x1 ? StepInc : -StepInc;
+  int sy = y0 < y1 ? StepInc : -StepInc;
+
+  long i;
+  long over = 0;
+
+  Serial.print("dx, dy :");
+  Serial.print(dx);
+  Serial.print(" ");
+  Serial.println(dy);
+
+  // Go to coordinates
+  if (dx > dy)
+  {
+    for (i = 0; i < dx; ++i)
+    {
+      StepperX.onestep(sx);
+      StepperX_2.onestep(sx);
+      over += dy;
+      if (over >= dx)
+      {
+        over -= dx;
+        StepperY.onestep(sy);
+      }
+    }
+  }
+  else
+  {
+    for (i = 0; i < dy; ++i)
+    {
+      StepperY.onestep(sy);
+      over += dx;
+      if (over >= dy)
+      {
+        over -= dy;
+        StepperX.onestep(sx);
+        StepperX_2.onestep(sx);
+      }
+    }
+  }
+
+  //  Delay before any next lines are submitted
+  delay(300);
+  //  Update the positions
+  Xpos = (x1 / StepsPerMillimeter);
+  ;
+  Ypos = (y1 / StepsPerMillimeter);
+  if (true)
+  {
+    Serial.print("X,Y :");
+    Serial.print(Xpos);
+    Serial.print(" ");
+    Serial.println(Ypos);
+  }
+}
+
+void moveZ()
+{
+
+  if (Zpos == 0)
+  {
+    penUp();
+    Zpos = 1;
+  }
+  else
+  {
+    penDown();
+    Zpos = 0;
+  }
+}
+
+void penUp()
+{
+  StepperZ.steps(1, 115);
+}
+
+void penDown()
+{
+  StepperZ.steps(-1, 90);
+}
+
+
+
+//  ##################################
+//  #         LCD Functions          #
+//  ##################################
+
+void printLCD(char *msg, int cursor , int delayt , boolean clear )
+{
+
+  // Clear and set cursor
+  if (clear)
+  {
+    lcd.clear;
+  }
+  if (cursor == 0 or cursor == 1)
+  {
+    lcd.setCursor(0, cursor);
+  }
+
+  // Get the message
+  i = 0;
+  char message[16];
+  while (i < 16)
+  {
+    message[i] = *(msg + i);
+    i += 1;
+  }
+
+  // Print it
+  lcd.print(message);
+  delay(delayt);
+}
+
+//  ##################################
+//  #         RFID Functions         #
+//  ##################################
+
+boolean readRFID()
+{
+
+  if (monModuleRFID.isCard())
+  {
+    // Get the id card
+    if (monModuleRFID.readCardSerial())
+    {
+      for (int i = 0; i <= 4; i++)
+      {
+        UID[i] = monModuleRFID.serNum[i];
+      }
+
+      // Check if the identifier is authorized
+      if (UID[0] == MASTERKEY[0] && UID[1] == MASTERKEY[1] && UID[2] == MASTERKEY[2] && UID[3] == MASTERKEY[3] && UID[4] == MASTERKEY[4])
+      {
+
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+int changeLockerState(int locker)
+{
+  if (locker == 1)
+  {
+    return 0;
+  }
+  else if (locker == 0)
+  {
+    return 1;
+  }
+}

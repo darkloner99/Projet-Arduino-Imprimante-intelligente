@@ -5,6 +5,8 @@ Created on 6 janv. 2019
 '''
 
 # Quelques variables utilsés par page, word et line
+# Attention !!!!
+# Ces chemins sont périmés et n'existent pas dans le git 
 #----------------------------------------------------------------------------------------------#
 
 OUTPUT_PATH = '../data/output'
@@ -13,6 +15,7 @@ characters = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G
                 'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h',
                 'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','autres']
 
+# Le dossier de trie doit etre au même endroit que votre scrit l'utilisant
 INPUT_PATH = {
     0:'trie\\0',1:'trie\\1',2:'trie\\2',3:'trie\\3',4:'trie\\4',5:'trie\\5',6:'trie\\6',7:'trie\\7',8:'trie\\8',9:'trie\\9',10:'trie\\A',11:'trie\\B',12:'trie\\C',13:'trie\\D',14:'trie\\E',15:'trie\\F',
     16:'trie\\G',17:'trie\\H',18:'trie\\I',19:'trie\\J',20:'trie\\K',21:'trie\\L',22:'trie\\M',23:'trie\\N',24:'trie\\O',25:'trie\\P',26:'trie\\Q',27:'trie\\R',28:'trie\\S',29:'trie\\T',30:'trie\\U',
@@ -24,8 +27,9 @@ INPUT_PATH = {
 
 #----------------------------------------------------------------------------------------------#
 
-
-characters1 = "../data/trie"
+#Chemin pointant vers les characteres isolés(exemple ceux dans trie) 
+characters1 = "../data/trie")
+#Chemin pointant vers les mots triés par charactères-extrator.py et validé par un humain !
 characters2 = "../data/combinaisons"
 default_space = 100
 max_line_lenght = 35

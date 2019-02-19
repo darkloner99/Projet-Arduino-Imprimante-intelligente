@@ -9,6 +9,12 @@ import serial
 import time
 import argparse
 
+## Global variables
+
+number_of_lines = 0
+trig = int(number_of_lines / 100)
+counter = 0
+
 parser = argparse.ArgumentParser(description='This is a basic gcode sender')
 parser.add_argument('-p','--port',help='Input USB port',required=True)
 parser.add_argument('-f','--file',help='Gcode file name',required=True)
@@ -43,6 +49,10 @@ def checkTime(time1):
 	else:
 		return time1
 
+def sendPercentage():
+	# envoyer pourcentage suivant trig et counter 
+	pass
+
  
 # Open serial port
 s = serial.Serial(args.port,9600)
@@ -51,6 +61,15 @@ print ('Opening Serial Port')
 # Open g-code file
 f = open(args.file,'r')
 print ('Opening gcode file')
+
+for line in f:
+	number_of_lines+=1
+
+print(str(number_of_lines) + " lignes\n")
+f.close()
+
+f = open(args.file, 'r')
+
  
 # Wake up 
 time.sleep(2)   # Wait for Printrbot to initialize
@@ -68,6 +87,9 @@ for line in f:
 	
 	#Check execution time >15 min and stop 2 min if it is the case
 	time1 = checkTime(time1)
+
+	#Send a percentage message all 1% 
+	#sendPercentage()
 	if  (l.isspace()==False and len(l)>0) :
 
 		l+='A'
@@ -78,12 +100,14 @@ for line in f:
 
 		print("Waiting responses :\n")
 		grbl_out = s.readline() # Wait for response with carriage return
-		time.sleep(1)
 		while grbl_out!=b'OK\r\n':
 			print(grbl_out)
 			grbl_out = s.readline() # Wait for response with carriage return
 			time.sleep(0.05)
 		print("\n")
+		counter+=1
+	     
+
 
 # Wait here until printing is finished to close serial port and file.
 raw_input("  Press <Enter> to exit.")

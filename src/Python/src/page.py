@@ -3,7 +3,8 @@
 Created on 30 dec. 2018
 
 
-
+Une page d'ecriture est généré a partir de ce code, Page se contente de triéer les combinaisons et de les indexer 
+et et d'appeler la classe ligne afin de récuperer des images de lignes et par la suite de les coller
 
 '''
 
