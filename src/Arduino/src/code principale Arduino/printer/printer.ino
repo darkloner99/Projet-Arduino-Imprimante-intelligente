@@ -68,7 +68,7 @@ double newPosZ;
 double cx;
 double cy;
 double dir;
-double CM_PER_SEGMENT = 0.1;
+double CM_PER_SEGMENT = 1;
 
 // RFID
 
@@ -143,7 +143,7 @@ void loop()
     if (locker == 1) printCompiledMessage(2);
     delay(1500);
   }
-  if (locker == 1)
+  if (locker == 0) // locker ==1
   {
     if (Serial.available())
     {
@@ -155,7 +155,7 @@ void loop()
       // We return a validation message
       Serial.println("OK");
     }
-    delay(50);
+    delay(1500);
   }
   else
   {
@@ -658,7 +658,7 @@ void arc2(float x, float y, float cx, float cy, float dir)
   // declare variables outside of loops because compilers can be really dumb andinefficient some times.
   float nx, ny, nz, angle3, fraction;
 
-  for (i = 0; i < num_segments; ++i)
+  for (i = 0; num_segments < 1; ++i) 
   {
     // interpolate around the arc
     fraction = ((float)i) / ((float)num_segments);

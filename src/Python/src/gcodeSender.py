@@ -97,6 +97,7 @@ for line in f:
 		l+='\n'
 
 		s.write((l + '\n').encode()) # Send g-code block
+		time.sleep(1)
 
 		print("Waiting responses :\n")
 		grbl_out = s.readline() # Wait for response with carriage return
@@ -104,6 +105,8 @@ for line in f:
 			print(grbl_out)
 			grbl_out = s.readline() # Wait for response with carriage return
 			time.sleep(0.05)
+		print(grbl_out)
+		grbl_out = ""
 		print("\n")
 		counter+=1
 	     
