@@ -143,7 +143,7 @@ void loop()
     if (locker == 1) printCompiledMessage(2);
     delay(1500);
   }
-  if (locker == 0) // locker ==1
+  if (locker == 1) // locker ==1
   {
     if (Serial.available())
     {
@@ -447,8 +447,6 @@ void execCommandLine(char *commandLine)
     // G01 ou G00 = ligne
     if(arc)
       {
-      Serial.print("arc:");
-      Serial.print(arc);
       Serial.println("  drawing arc...");
       Serial.println(newPosX);
       Serial.println(newPosY);
@@ -460,8 +458,6 @@ void execCommandLine(char *commandLine)
       }
       else
       {
-      Serial.print("arc:");
-      Serial.print(arc);
       Serial.println("  drawing line...");
       Serial.println(newPosX);
       Serial.println(newPosY);
