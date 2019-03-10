@@ -28,7 +28,7 @@ INPUT_PATH = {
 #----------------------------------------------------------------------------------------------#
 
 #Chemin pointant vers les characteres isolés(exemple ceux dans trie) 
-characters1 = "../data/trie")
+characters1 = "../data/charac"
 #Chemin pointant vers les mots triés par charactères-extrator.py et validé par un humain !
 characters2 = "../data/combinaisons"
 default_space = 100

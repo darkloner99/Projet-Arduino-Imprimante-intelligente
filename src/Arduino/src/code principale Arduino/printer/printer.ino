@@ -1,30 +1,33 @@
 #include <Stepper_custom.h>
 #include <RFID.h>
 #include <SPI.h>
-#include <LiquidCrystal.h>
+#include <LiquidCrystal_I2C.h>
 #include <stdio.h>
 #include <math.h>
-
+#include <Wire.h>
 /*
 * Ce code, chargé dans une carte arduino relié correctement à des moteurs permet d'imprimer
-* une image envoyé en format gcode 
+* une image envoyé au format gcode 
 */
 
 // Motor 1 and 2 pin  
 // Axe X
-const int Pas_1_2 = 2;
-const int Dir_1 = 3;
-const int Dir_2 = 4;
+const int Pas_1_2 = 7;
+const int Dir_1_2 = 8;
+
+
 
 // Motor 3 pin
 // Axe Y
-const int Pas_3 = 5;
-const int Dir_3 = 6;
+const int Pas_3 = 3;
+const int Dir_3 = 4;
+
+
 
 // Motor 4 pin
 // Axe Z
-const int Pas_4 = 7;
-const int Dir_4 = 8;
+const int Pas_4 = 5;
+const int Dir_4 = 6;
 
 // Enable
 /*
@@ -33,11 +36,12 @@ const int Dir_4 = 8;
  * veuilez mettre un vrai port pour toute utilisation
  * Si enable est mis su HIGh, tout les moteurs sont stopé 
  */
-const int ENABLE = 25;
+const int ENABLE_X = 2;
+const int ENABLE_Y = 14;
+const int ENABLE_Z = 15;
 
 // Initialise Stepper Motor
-Stepper_custom StepperX(Dir_1, Pas_1_2);
-Stepper_custom StepperX_2(Dir_2, Pas_1_2);
+Stepper_custom StepperX(Dir_1_2, Pas_1_2);
 Stepper_custom StepperY(Dir_3, Pas_3);
 Stepper_custom StepperZ(Dir_4, Pas_4);
 
@@ -46,7 +50,7 @@ int MicroStep = 8;
 float AnglePerStep = 1.8;
 float Circumference = 31.4;
 float NbStepPerRotation = 360 / AnglePerStep;
-float StepsPerMillimeter = (NbStepPerRotation / Circumference) * MicroStep;
+float StepsPerMillimeter = (NbStepPerRotation / Circumference) * MicroStep*1.5;
 float StepInc = -1;
 int StepDelay = 0;
 int LineDelay = 0;
@@ -56,6 +60,8 @@ int penDelay = 50;
  
 float Xpos = 0;
 float Ypos = 0;
+float savedYpos = 0;
+float savedXpos = 0;
 int Zpos = 1;
 float Xmax = 200;
 float Ymax = 300;
@@ -68,18 +74,18 @@ double newPosZ;
 double cx;
 double cy;
 double dir;
-double CM_PER_SEGMENT = 1;
+double CM_PER_SEGMENT = 10;
 
 // RFID
 
 RFID monModuleRFID(10,9);
-int locker = 0;
+int locker = 0;                 /// a modifier !!!!! =0
 int UID[5];
 int MASTERKEY[5]={2,121,37,217,135};
 
 // LCD
 
-LiquidCrystal lcd(14,15,16,17,18,19);
+LiquidCrystal_I2C lcd(0x27,20,4);
 char msg[16];
 
 // global variables
@@ -109,12 +115,10 @@ void setup()
   pinMode(Pas_3, OUTPUT);
   pinMode(Pas_4, OUTPUT);
 
-  pinMode(Dir_1, OUTPUT);
-  pinMode(Dir_2, OUTPUT);
+  pinMode(Dir_1_2, OUTPUT);
   pinMode(Dir_3, OUTPUT);
   pinMode(Dir_4, OUTPUT);
 
-  StepperX_2.setspeed(1);
   StepperX.setspeed(1);
   StepperY.setspeed(1);
   StepperZ.setspeed(1);
@@ -123,8 +127,12 @@ void setup()
   SPI.begin();
   monModuleRFID.init();  
 
-  lcd.clear();
-  lcd.begin(16,2);
+  lcd.init();
+
+    // Disable drivers
+  digitalWrite(ENABLE_X,HIGH);
+  digitalWrite(ENABLE_Y,HIGH);
+  //digitalWrite(ENABLE_Z,LOW);
 
 }
 
@@ -134,16 +142,17 @@ void loop()
  * Delay allows to arduino to not bug
 */
 {
+  lcd.backlight();
   if (readRFID())
   {
     // locker = 0 ou 1 si activé ou non
     locker = changeLockerState(locker);
-    //Serial.print("Locker changed state :");
-    //Serial.println(locker);
+    Serial.print("Locker changed state :");
+    Serial.println(locker);
     if (locker == 1) printCompiledMessage(2);
-    delay(1500);
+    delay(2000);
   }
-  if (locker == 1) // locker ==1
+  if (locker == 1) 
   {
     if (Serial.available())
     {
@@ -155,14 +164,13 @@ void loop()
       // We return a validation message
       Serial.println("OK");
     }
-    delay(1500);
+    delay(50);
   }
   else
   {
     // Print on LCD: Identification requise:
     printCompiledMessage(1);
   }
-  delay(20);
 }
 
 //   ###################
@@ -367,7 +375,7 @@ void execCommandLine(char *commandLine)
   char BUFFER_4;
   char *word_c = getNextWord(commandLine);
 
-  delay(100);
+  //delay(100);
   BUFFER_1 = getNextCharac(word_c);
   BUFFER_2 = getNextCharac(word_c);
   switch (BUFFER_1)
@@ -427,16 +435,18 @@ void execCommandLine(char *commandLine)
         else if (BUFFER_1 == 'I')
         {
           Serial.println("OKAY_I");
-          arc = true;
+          //arc = true;
+          //arc = false;
           //line = false;
-          cx = extractDouble(word_c, 1, 13);
+          //cx = extractDouble(word_c, 1, 13);
         }
         else if (BUFFER_1 == 'J')
         {
           Serial.println("OKAY_J");
-          arc = true;
+           //arc = true;
+          //arc = false;
           //line = false;
-          cy = extractDouble(word_c, 1, 13);
+          //cy = extractDouble(word_c, 1, 13);
           
         }
 
@@ -445,25 +455,39 @@ void execCommandLine(char *commandLine)
     }
     // G02 ou G03 = arc
     // G01 ou G00 = ligne
-    if(arc)
-      {
-      Serial.println("  drawing arc...");
-      Serial.println(newPosX);
-      Serial.println(newPosY);
-      Serial.println(cx);
-      Serial.println(cy);
-      arc2(newPosX,newPosY,cx,cy,dir);
-      arc = false;
-      delay(50);
-      }
-      else
-      {
+//    if(arc)
+//      {
+//      Serial.println("  drawing arc...");
+//      Serial.println(newPosX);
+//      Serial.println(newPosY);
+//      Serial.println(cx);
+//      Serial.println(cy);
+//      arc2(newPosX,newPosY,cx,cy,dir);
+//      arc = false;
+//      delay(50);
+//      }
+
       Serial.println("  drawing line...");
       Serial.println(newPosX);
       Serial.println(newPosY);
+      Serial.print("SavedY: ");
+      Serial.println(savedYpos);
+      Serial.print("SavedX: ");
+      Serial.println(savedXpos);
+      
+      Serial.println("Current:");
+      Serial.println(Ypos);
+      Serial.println(Xpos);
+      if(Ypos!=savedYpos){
+        Serial.println("changed");
+        Ypos = savedYpos;
+      }
+      if(Xpos!=savedXpos){
+        Serial.println("changed");
+        Xpos = savedXpos;
+      }
       drawLine(newPosX, newPosY);
       arc = false;
-      }
     deleteSubchain();
     break;
 
@@ -474,27 +498,18 @@ void execCommandLine(char *commandLine)
 
   case 'E':
    // Enable or not the drivers
-    if (BUFFER_2 == '0')
-    {
-      digitalWrite(ENABLE, HIGH);
-    }
-    if (BUFFER_2 == '1')
-    {
-      digitalWrite(ENABLE, LOW);
-    }
-    break;
+   // methode not useful now 
 
   case 'P':
 
    // We have already BUFFER_1 and BUFFER_2 so we get only
    // BUFFER_3
-    BUFFER_3 = getNextCharac(word_c);
-    BUFFER_4 = getNextCharac(word_c);
+
     // The next word is the word to print
     word_c = getNextWord(word_c);
 
     // Call printLCD to print it 
-    printLCD(word_c ,BUFFER_1, BUFFER_2, BUFFER_3, BUFFER_4);
+    printLCD(word_c ,BUFFER_1, BUFFER_2, 0, 0);
 
  
 
@@ -555,8 +570,8 @@ void drawLine(float x1, float y1)
   //  Let's find out the change for the coordinates
   long dx = abs((x1 - x0));
   long dy = abs(y1 - y0);
-  int sx = x0 < x1 ? StepInc : -StepInc;
-  int sy = y0 < y1 ? StepInc : -StepInc;
+  int sx = x0 < x1 ?  StepInc : -StepInc;
+  int sy = y0 < y1 ? -StepInc : StepInc;
 
   long i;
   long over = 0;
@@ -572,12 +587,17 @@ void drawLine(float x1, float y1)
   // Go to coordinates 
   // over est en quelque sort la pente,
   // par exemple quand on avance de 3 on monte de 1
+
+  // Enable drivers
+  digitalWrite(ENABLE_X,LOW);
+  digitalWrite(ENABLE_Y,LOW);
+  
   if (dx > dy)
   {
     for (i = 0; i < dx; ++i)
     {
-      StepperX.onestep(-sx);
-      StepperX_2.onestep(sx);
+      digitalWrite(ENABLE_X,LOW);
+      StepperX.onestep(sx);
       over += dy;
       if (over >= dx)
       {
@@ -595,24 +615,42 @@ void drawLine(float x1, float y1)
       if (over >= dy)
       {
         over -= dy;
-        StepperX.onestep(-sx);
-        StepperX_2.onestep(sx);
+        StepperX.onestep(sx);
       }
     }
   }
 
+  // Disable drivers
+  digitalWrite(ENABLE_X,HIGH);
+  digitalWrite(ENABLE_Y,HIGH);
+
   //  Delay before any next lines are submitted
   delay(10);
   //  Update the positions
+
+   if (false)
+  {
+    Serial.print("X,Y :");
+    Serial.print(Xpos);
+    Serial.print(" ");
+    Serial.println(Ypos);
+  }
+
   Xpos = (x1 / StepsPerMillimeter);
-  ;
   Ypos = (y1 / StepsPerMillimeter);
+  savedYpos = Ypos;
+  savedXpos = Xpos;
+  
   if (false)
   {
     Serial.print("X,Y :");
     Serial.print(Xpos);
     Serial.print(" ");
     Serial.println(Ypos);
+    Serial.print("x1: ");
+    Serial.println(x1 / StepsPerMillimeter);
+    Serial.print("y1: ");
+    Serial.println(y1 / StepsPerMillimeter);
   }
 }
 
@@ -650,11 +688,11 @@ void arc2(float x, float y, float cx, float cy, float dir)
   // float len=sweep*circumference/(PI*2.0);
   // simplifies to
   float len = abs(sweep) * radius;
-  int i, num_segments = floor(len / CM_PER_SEGMENT);
+  int i, num_segments = max(ceil(len / CM_PER_SEGMENT),1);
   // declare variables outside of loops because compilers can be really dumb andinefficient some times.
   float nx, ny, nz, angle3, fraction;
 
-  for (i = 0; num_segments < 1; ++i) 
+  for (i = 0; i<num_segments; ++i) 
   {
     // interpolate around the arc
     fraction = ((float)i) / ((float)num_segments);
@@ -665,7 +703,7 @@ void arc2(float x, float y, float cx, float cy, float dir)
     ny = cy + sin(angle3) * radius;
     // make a line to that intermediate position
     drawLine(nx, ny);
-    delay(100);
+    delay(10);
   }
   // one last line hit the end
   drawLine(nx, ny);
@@ -691,7 +729,10 @@ void penUp()
 * Monte le stylo 
 */
 {
-  StepperZ.steps(-1, 140);
+  // Enable 
+  digitalWrite(ENABLE_Z,LOW);
+  delay(10);
+  StepperZ.steps(1, 140);
   Serial.println("penup");
 }
 
@@ -700,8 +741,11 @@ void penDown()
 * Descent le stylo 
 */
 {
-  StepperZ.steps(1, 90);
+  StepperZ.steps(-1, 90);
   Serial.println("pendown");
+  // disable
+  digitalWrite(ENABLE_Z,HIGH);
+  //delay(500);
 }
 
 
@@ -723,7 +767,7 @@ void printLCD(char *msg, int cursor ,int clear, int delay_1 ,int delay_2 )
   // Clear and set cursor
   if (clear == 1)
   {
-    lcd.clear();
+    //lcd.clear();
   }
 
   // Get the message
@@ -731,6 +775,7 @@ void printLCD(char *msg, int cursor ,int clear, int delay_1 ,int delay_2 )
   char message[16];
   while (i < 16)
   {
+    lcd.backlight();
     message[i] = *(msg + i);
     lcd.setCursor(i,cursor);
     lcd.print(message[i]);
@@ -751,16 +796,18 @@ void printCompiledMessage(int number){
     
     case 1:
         strncpy(msg,"Identification   ",sizeof(msg));
-        printLCD(&msg[0] , 0 , 1 , 100, 0 );
+        printLCD(&msg[0] , 0 , 1 , 0, 0 );
         strncpy(msg,"requise.        ",sizeof(msg));
-        printLCD(&msg[0], 1, 0, 100, 50);
+        printLCD(&msg[0], 1, 0, 0, 50);
+        Serial.println("Identification requise");
         break;
   
     case 2:
         strncpy(msg,"Vous etes       ",sizeof(msg));
-        printLCD(&msg[0] , 0 , 1 , 30, 0 );
+        printLCD(&msg[0] , 0 , 1 , 0, 0 );
         strncpy(msg,"connecte.       ",sizeof(msg));
-        printLCD(&msg[0], 1, 0, 30, 0);
+        printLCD(&msg[0], 1, 0, 0, 50);
+        Serial.println("Vous êtes connecte");
         break;
   }
 }

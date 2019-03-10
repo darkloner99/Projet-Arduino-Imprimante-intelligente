@@ -37,8 +37,8 @@ def checkTime(time1):
 	#If 600 secondes have elapsed, we're taking a pause
 	if ((time2-time1) > 540):	
 		s.write("E0A".encode()) #E0A is the instruction to stop  drivers
-		print("Pause de 140 sec afin d'éviter le surchauffement des drivers ...")
-		time.sleep(140)
+		print("Pause de 30 sec afin d'éviter le surchauffement des drivers ...")
+		time.sleep(30)
 		print("Fin de la pause !")
 		time.sleep(2)
 		time1  = time.clock()
@@ -49,9 +49,9 @@ def checkTime(time1):
 	else:
 		return time1
 
-def sendPercentage():
-	# envoyer pourcentage suivant trig et counter 
-	pass
+def sendPercentage(counter):
+	percentage = int((counter/number_of_lines)*100)
+	s.write(("P01A" + str(percentage)+"A").encode())
 
  
 # Open serial port
@@ -89,31 +89,27 @@ for line in f:
 	time1 = checkTime(time1)
 
 	#Send a percentage message all 1% 
-	#sendPercentage()
+	sendPercentage()
 	if  (l.isspace()==False and len(l)>0) :
 
 		l+='A'
 		print ('Sending: ' + l)
 		l+='\n'
-
 		s.write((l + '\n').encode()) # Send g-code block
-		time.sleep(1)
-
+		time.sleep(0.3)
 		print("Waiting responses :\n")
 		grbl_out = s.readline() # Wait for response with carriage return
+
 		while grbl_out!=b'OK\r\n':
 			print(grbl_out)
 			grbl_out = s.readline() # Wait for response with carriage return
 			time.sleep(0.05)
+
 		print(grbl_out)
 		grbl_out = ""
 		print("\n")
 		counter+=1
 	     
-
-
-# Wait here until printing is finished to close serial port and file.
-raw_input("  Press <Enter> to exit.")
  
 # Close file and serial port
 f.close()

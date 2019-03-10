@@ -1,0 +1,1 @@
+python generateText.py --file C:\Users\antoi\Documents\GitHub\Projet-Arduino-Imprimante-intelligente\src\Python\data\textes\texte1.txt --dir C:\Users\antoi\Desktop --name test2

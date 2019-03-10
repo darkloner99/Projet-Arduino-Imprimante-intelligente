@@ -1,0 +1,2 @@
+Bienvenue a la presentation d'Arduino de Raphael et d'Antoine.
+Merci pour votre ecoute et nous esperons que notre projet vous plaira 
