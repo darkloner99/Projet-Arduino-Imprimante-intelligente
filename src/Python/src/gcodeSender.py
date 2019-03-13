@@ -52,6 +52,11 @@ def checkTime(time1):
 def sendPercentage(counter):
 	percentage = int((counter/number_of_lines)*100)
 	s.write(("P01A" + str(percentage)+"A").encode())
+	grbl_out = s.readline() # Wait for response with carriage return
+	while grbl_out!=b'OK\r\n':
+		print(grbl_out)
+		grbl_out = s.readline() # Wait for response with carriage return
+		time.sleep(0.05)
 
  
 # Open serial port
@@ -89,7 +94,7 @@ for line in f:
 	time1 = checkTime(time1)
 
 	#Send a percentage message all 1% 
-	sendPercentage()
+	#sendPercentage(counter)
 	if  (l.isspace()==False and len(l)>0) :
 
 		l+='A'

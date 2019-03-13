@@ -164,13 +164,15 @@ void loop()
       // We return a validation message
       Serial.println("OK");
     }
-    delay(50);
+    delay(80);
   }
   else
   {
     // Print on LCD: Identification requise:
     printCompiledMessage(1);
+    delay(1000);
   }
+  delay(20);
 }
 
 //   ###################
@@ -504,6 +506,7 @@ void execCommandLine(char *commandLine)
 
    // We have already BUFFER_1 and BUFFER_2 so we get only
    // BUFFER_3
+   //Serial.println("affichage");
 
     // The next word is the word to print
     word_c = getNextWord(word_c);
@@ -767,7 +770,7 @@ void printLCD(char *msg, int cursor ,int clear, int delay_1 ,int delay_2 )
   // Clear and set cursor
   if (clear == 1)
   {
-    //lcd.clear();
+    lcd.clear();
   }
 
   // Get the message
