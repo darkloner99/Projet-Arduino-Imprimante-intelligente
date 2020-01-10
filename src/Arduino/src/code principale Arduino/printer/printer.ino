@@ -30,12 +30,7 @@ const int Pas_4 = 5;
 const int Dir_4 = 6;
 
 // Enable
-/*
- * A modififier !!!!! 
- * Les 19 ports étant utilisé sur ma carte arduino, j'an ai mis un au hassard
- * veuilez mettre un vrai port pour toute utilisation
- * Si enable est mis su HIGh, tout les moteurs sont stopé 
- */
+
 const int ENABLE_X = 2;
 const int ENABLE_Y = 14;
 const int ENABLE_Z = 15;
@@ -237,7 +232,7 @@ void newPrintSerial(char *ptr)
 }
 
 char getNextCharac(char *ptr)
-// récupere la prochaine char de notre variable word_c (sous ensemble de subchain)
+// Recupere la prochaine char de notre variable word_c (sous ensemble de subchain)
 {
 
   CHARAC_INDEX += 1;
@@ -245,7 +240,7 @@ char getNextCharac(char *ptr)
 }
 
 char *getNextWord(char *ptr)
-// recupere le prochain mot de subchain(tableaux de 10 mots de max 15 charactères)
+// Recupere le prochain mot de subchain(tableaux de 10 mots de max 15 charactères)
 {
 
   char *ptr_2 = getArrayElement(ptr, WORD_INDEX);
@@ -285,7 +280,7 @@ boolean checkIfNumber(char c)
 }
 
 char *splitLineInstruction(char str[])
-// récupere dans le serial les instructions en les splitant en mots tous les A rencontrés
+// Récupere dans le serial les instructions en les splitant en mots tous les A rencontrés
 {
 
   int i = 0;
